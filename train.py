@@ -1,5 +1,10 @@
 import os
+import  argparse
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.utils.data as data
+import torch.optim as opt
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
@@ -175,6 +180,66 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
         print('Final Loss:', loss_hist[-1], file=file)
         print('Final Train Accuracy:', train_acc_hist[-1], file=file)
         print('Final Test Accuracy:', test_acc_hist[-1], file=file)
+
+
+class Model(nn.Module):
+    def __init__(self):
+        super(Model, self).__init__()
+        self.conv1 = nn.Conv2d(3, 8, 3, 1, 1) # 8, 256, 256
+        self.pool1 = nn.MaxPool2d(2, 2) # 8, 128, 128
+        self.conv2 = nn.Conv2d(8, 16, 3, 1, 1) # 16, 128, 128
+        self.pool2 = nn.MaxPool2d(2, 2) # 16, 64, 64
+        self.fc1 = nn.Linear(16*64*64, 2048)
+        self.fc2 = nn.Linear(2048, 64)
+        self.fc3 = nn.Linear(64, 2)
+
+    def forward(self, x):
+        x = self.pool1(F.relu(self.conv1(x)))
+        x = self.pool2(F.relu(self.conv2(x)))
+        x = x.view(-1, 16*64*64)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+if __name__ == "__main__":
+    # parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--num_epoch", dest='num_epochs', action='store', type=int,
+                        help="Number of Epochs")
+    parser.add_argument("--learning_rate", dest='lr', action='store', type=float,
+                        help="Learning rate")
+    parser.add_argument("--adaptive_learning", dest='steps_epochs', action='store', nargs='+', type=int,
+                        help="Epochs at which to drop the learning rate by factor 10")
+    parser.add_argument("--batch_size", dest='batch_size', action='store', type=int,
+                        help="Batch size for training")
+    parser.add_argument("--num_workers", dest='num_workers', action='store', type=int,
+                        help="Number of workers for dataloader")
+
+    parser.set_defaults(num_epochs=10, lr=1e-2, steps_epochs=[5, 8, 10], batch_size=128, num_workers=8)
+    args = parser.parse_args()
+
+    # check if GPU available
+    device = get_device()
+
+    # load data
+    trainset, testset = load_dataset()
+    print("Load data")
+
+    # dataloader
+    trainloader = data.DataLoader(trainset, args.batch_size, True, num_workers=args.num_workers, pin_memory=True)
+    testloader = data.DataLoader(testset, args.batch_size)
+
+    # model
+    net = Model()
+
+    # scheduler + optimizer
+    criterion = nn.CrossEntropyLoss()
+    optimizer = opt.Adam(net.parameters(), lr=args.lr)
+    scheduler = opt.lr_scheduler.MultiStepLR(optimizer, args.steps_epohcs, 0.1)
+
+    # training
+    train(net, trainloader, testloader, criterion, optimizer, scheduler, args.num_epochs, device, mobilenet=None)
 
 
 
