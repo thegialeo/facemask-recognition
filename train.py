@@ -5,10 +5,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as data
 import torch.optim as opt
+from torchvision import models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 import time
 
 def get_device():
@@ -55,7 +55,7 @@ def evaluate(net, loader, device, mobilenet=None):
     correct = 0
     total = 0
     with torch.no_grad():
-        for i, (img, label) in enumerate(tqdm(loader)):
+        for i, (img, label) in enumerate(loader):
             img = img.to(device)
             label = label.to(device)
             if mobilenet is not None:
@@ -95,15 +95,10 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
 
     for epoch in range(num_epochs):
         # training
-        print()
-        print(80 * '-')
-        print()
-        print("Epoch: {}".format(epoch+1))
-        print("Training:")
-        #start = time.time()
+        start = time.time()
         net.train()
 
-        for i, (img, label) in enumerate(tqdm(trainloader)):
+        for i, (img, label) in enumerate(trainloader):
             img = img.to(device)
             label = label.to(device)
             optimizer.zero_grad()
@@ -124,18 +119,14 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
         scheduler.step()
 
         # evaluation
-        print("Evaluating:")
         net.eval()
-        # compute accuracy
         train_acc = evaluate(net, trainloader, device, mobilenet)
         test_acc = evaluate(net, testloader, device, mobilenet)
-        # record
         loss_hist.append(running_loss)
         train_acc_hist.append(train_acc)
         test_acc_hist.append(test_acc)
-        # print loss and accuracy
-        print('epoch {}, loss {:.5f}, train acc {:.3f}, test acc {:.3f}'.format(
-            epoch+1, running_loss, train_acc, test_acc))
+        print('epoch {} \t loss {:.5f} \t train acc {:.3f} \t test acc {:.3f}'.format(epoch+1, running_loss,
+                                                                                      train_acc, test_acc))
 
         # create directory
         if not os.path.exists('./plots'):
@@ -182,26 +173,6 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
         print('Final Test Accuracy:', test_acc_hist[-1], file=file)
 
 
-class Model(nn.Module):
-    def __init__(self):
-        super(Model, self).__init__()
-        self.conv1 = nn.Conv2d(3, 8, 3, 1, 1) # 8, 256, 256
-        self.pool1 = nn.MaxPool2d(2, 2) # 8, 128, 128
-        self.conv2 = nn.Conv2d(8, 16, 3, 1, 1) # 16, 128, 128
-        self.pool2 = nn.MaxPool2d(2, 2) # 16, 64, 64
-        self.fc1 = nn.Linear(16*64*64, 2048)
-        self.fc2 = nn.Linear(2048, 64)
-        self.fc3 = nn.Linear(64, 2)
-
-    def forward(self, x):
-        x = self.pool1(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        x = x.view(-1, 16*64*64)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
 if __name__ == "__main__":
     # parser
     parser = argparse.ArgumentParser()
@@ -216,7 +187,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", dest='num_workers', action='store', type=int,
                         help="Number of workers for dataloader")
 
-    parser.set_defaults(num_epochs=10, lr=1e-2, steps_epochs=[5, 8, 10], batch_size=128, num_workers=8)
+    parser.set_defaults(num_epochs=100, lr=1e-2, steps_epochs=[50, 80, 100], batch_size=128, num_workers=8)
     args = parser.parse_args()
 
     # check if GPU available
@@ -231,12 +202,12 @@ if __name__ == "__main__":
     testloader = data.DataLoader(testset, args.batch_size)
 
     # model
-    net = Model()
+    net = models.mobilenet_v2(pretrained=False).to(device)
 
     # scheduler + optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = opt.Adam(net.parameters(), lr=args.lr)
-    scheduler = opt.lr_scheduler.MultiStepLR(optimizer, args.steps_epohcs, 0.1)
+    scheduler = opt.lr_scheduler.MultiStepLR(optimizer, args.steps_epochs, 0.1)
 
     # training
     train(net, trainloader, testloader, criterion, optimizer, scheduler, args.num_epochs, device, mobilenet=None)
