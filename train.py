@@ -2,14 +2,13 @@ import os
 import  argparse
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.utils.data as data
 import torch.optim as opt
 from torchvision import models
-import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import time
+from HDF5Dataset import HDF5Dataset
 
 def get_device():
     """
@@ -21,6 +20,7 @@ def get_device():
 
     return device
 
+
 def load_dataset():
     """
     Load train- and testset from subfolder 'dataset'.
@@ -28,19 +28,16 @@ def load_dataset():
     :return: trainset, testset
     """
 
-    train_path = os.path.join('./dataset', 'train')
-    test_path = os.path.join('./dataset', 'test')
+    train_path = os.path.join('./dataset', 'train.h5')
+    test_path = os.path.join('./dataset', 'test.h5')
 
-    transform = transforms.Compose([transforms.Resize((256, 256)),
-                                    transforms.ToTensor(),
-                                    transforms.Normalize(
-                                        mean=[0.47333890199661255, 0.4121790826320648, 0.38239002227783203],
-                                        std=[0.24937640130519867, 0.23304365575313568, 0.232471764087677])])
+    transform = transforms.Compose([transforms.ToTensor()])
 
-    trainset = datasets.ImageFolder(train_path, transform)
-    testset = datasets.ImageFolder(test_path, transform)
+    trainset = HDF5Dataset(train_path, False, True, transform=transform)
+    testset = HDF5Dataset(test_path, False, True, transform=transform)
 
     return trainset, testset
+
 
 def evaluate(net, loader, device, mobilenet=None):
     """
