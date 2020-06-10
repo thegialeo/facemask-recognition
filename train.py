@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import time
 import h5py
 from NumpyDataset import NumpyDataset
+from classifier import classifier
 
 def get_device():
     """
@@ -77,7 +78,7 @@ def evaluate(net, loader, device, mobilenet=None):
     return 100 * correct / total
 
 
-def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epochs, device, mobilenet=None):
+def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epochs, device, mobilenet=None, name=''):
     """
     Train and evaluate a model with CPU or GPU.
 
@@ -90,6 +91,7 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
     :param num_epochs: number of epochs
     :param device: device to train on (CPU or GPU)
     :param mobilenet: pretrained mobilenet (optional)
+    :param name: name extension to save log files and graphs
     :return: None
     """
 
@@ -149,7 +151,7 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
         plt.grid(True, which="both")
         plt.xlabel('epoch', fontsize=14)
         plt.ylabel('average loss', fontsize=14)
-        plt.savefig(os.path.join('./plots', 'loss.png'))
+        plt.savefig(os.path.join('./plots', 'loss' + name + '.png'))
 
         # save train accuracy plot
         plt.figure(num=None, figsize=(8, 6))
@@ -157,7 +159,7 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
         plt.grid(True, which='both')
         plt.xlabel('epoch', fontsize=14)
         plt.ylabel('accuracy', fontsize=14)
-        plt.savefig(os.path.join('./plots', 'train_acc.png'))
+        plt.savefig(os.path.join('./plots', 'train_acc' + name + '.png'))
 
         # save test accuracy plot
         plt.figure(num=None, figsize=(8, 6))
@@ -165,16 +167,16 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
         plt.grid(True, which='both')
         plt.xlabel('epoch', fontsize=14)
         plt.ylabel('accuracy', fontsize=14)
-        plt.savefig(os.path.join('./plots', 'test_acc.png'))
+        plt.savefig(os.path.join('./plots', 'test_acc' + name + '.png'))
 
         # close all figures
         plt.close("all")
 
         # save model weights
-        torch.save(net.state_dict(), os.path.join('./models', 'net.pt'))
+        torch.save(net.state_dict(), os.path.join('./models', 'net' + name + '.pt'))
 
         # save logs
-        file = open(os.path.join('./logs', 'log.txt'), 'w')
+        file = open(os.path.join('./logs', 'log' + name + '.txt'), 'w')
         print('Final Loss:', loss_hist[-1], file=file)
         print('Final Train Accuracy:', train_acc_hist[-1], file=file)
         print('Final Test Accuracy:', test_acc_hist[-1], file=file)
@@ -184,7 +186,9 @@ if __name__ == "__main__":
     # parser
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_mode", dest='mode', action='store',
-                        help="Training mode: from_scratch, finetune, transfer")
+                        help="Training mode: from_scratch, finetune")
+    parser.add_argument("--transfer_layer", dest='layer', action='store', type=int,
+                        help="Layer of mobilenet to get the features from")
     parser.add_argument("--num_epoch", dest='num_epochs', action='store', type=int,
                         help="Number of Epochs")
     parser.add_argument("--learning_rate", dest='lr', action='store', type=float,
@@ -196,8 +200,16 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", dest='num_workers', action='store', type=int,
                         help="Number of workers for dataloader")
 
-    parser.set_defaults(mode='from_scratch', num_epochs=100, lr=1e-2, steps_epochs=[50, 80, 100], batch_size=128, num_workers=0)
+    parser.set_defaults(mode='from_scratch', layer=None, num_epochs=100, lr=1e-2, steps_epochs=[50, 80, 100],
+                        batch_size=128, num_workers=0)
     args = parser.parse_args()
+
+    # set mode to transfer learning, if layer number of mobilenet is given
+    if args.layer is not None:
+        args.mode = 'transfer'
+
+    # name extension
+    name = args.mode
 
     # check if GPU available
     device = get_device()
@@ -211,12 +223,23 @@ if __name__ == "__main__":
     testloader = data.DataLoader(testset, args.batch_size)
 
     # model
+    print("Initialize Training Mode: {}".format(args.mode))
     if args.mode == 'from_scratch':
+        mobilenet = None
         net = models.mobilenet_v2(pretrained=False).to(device)
     elif args.mode == 'finetune':
+        mobilenet = None
         net = models.mobilenet_v2(pretrained=True).to(device)
-    elif args.mode == 'transfer':
-        net = 
+    elif args.mode == 'transfer' and args.layer is not None:
+        mobilenet = models.mobilenet_v2(pretrained=True).features[:args.layer]
+        batch = next(iter(trainloader))
+        net = classifier(batch)
+        name += '{}'.format(args.layer)
+    else:
+        if args.mode == 'transfer' and args is None:
+            print("Error: Layer of mobilenet from which to get features is not specified!")
+        else:
+            print("Error: Training Mode {} is not defined!".format(args.mode))
 
     # scheduler + optimizer
     criterion = nn.CrossEntropyLoss()
@@ -224,7 +247,7 @@ if __name__ == "__main__":
     scheduler = opt.lr_scheduler.MultiStepLR(optimizer, args.steps_epochs, 0.1)
 
     # training
-    train(net, trainloader, testloader, criterion, optimizer, scheduler, args.num_epochs, device, mobilenet=None)
+    train(net, trainloader, testloader, criterion, optimizer, scheduler, args.num_epochs, device, mobilenet, name)
 
 
 
