@@ -1,6 +1,4 @@
 import h5py
-import helpers
-import numpy as np
 from pathlib import Path
 import torch
 from torch.utils import data
@@ -58,19 +56,17 @@ class HDF5Dataset(data.Dataset):
     def _add_data_infos(self, file_path, load_data):
         with h5py.File(file_path) as h5_file:
             # Walk through all groups, extracting datasets
-            for gname, group in h5_file.items():
-                for dname, ds in group.items():
-                    # if data is not loaded its cache index is -1
-                    idx = -1
-                    if load_data:
-                        # add data to the data cache
-                        idx = self._add_to_cache(ds.value, file_path)
+            for dname, ds in h5_file.items():
+                # if data is not loaded its cache index is -1
+                idx = -1
+                if load_data:
+                    # add data to the data cache
+                    idx = self._add_to_cache(ds.value, file_path)
 
-                    # type is derived from the name of the dataset; we expect the dataset
-                    # name to have a name such as 'data' or 'label' to identify its type
-                    # we also store the shape of the data in case we need it
-                    self.data_info.append(
-                        {'file_path': file_path, 'type': dname, 'shape': ds.value.shape, 'cache_idx': idx})
+                # type is derived from the name of the dataset; we expect the dataset
+                # name to have a name such as 'data' or 'label' to identify its type
+                # we also store the shape of the data in case we need it
+                self.data_info.append({'file_path': file_path, 'type': dname, 'shape': ds.value.shape, 'cache_idx': idx})
 
     def _load_data(self, file_path):
         """Load data to the cache given the file
@@ -78,17 +74,16 @@ class HDF5Dataset(data.Dataset):
         data_info structure.
         """
         with h5py.File(file_path) as h5_file:
-            for gname, group in h5_file.items():
-                for dname, ds in group.items():
-                    # add data to the data cache and retrieve
-                    # the cache index
-                    idx = self._add_to_cache(ds.value, file_path)
+            for dname, ds in h5_file.items():
+                # add data to the data cache and retrieve
+                # the cache index
+                idx = self._add_to_cache(ds.value, file_path)
 
-                    # find the beginning index of the hdf5 file we are looking for
-                    file_idx = next(i for i, v in enumerate(self.data_info) if v['file_path'] == file_path)
+                # find the beginning index of the hdf5 file we are looking for
+                file_idx = next(i for i, v in enumerate(self.data_info) if v['file_path'] == file_path)
 
-                    # the data info should have the same index since we loaded it in the same way
-                    self.data_info[file_idx + idx]['cache_idx'] = idx
+                # the data info should have the same index since we loaded it in the same way
+                self.data_info[file_idx + idx]['cache_idx'] = idx
 
         # remove an element from data cache if size was exceeded
         if len(self.data_cache) > self.data_cache_size:

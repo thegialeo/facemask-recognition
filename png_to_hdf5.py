@@ -16,7 +16,10 @@ for i, subdir in enumerate(os.listdir(os.path.join("./dataset", "train"))):
 shuffle(trainset)
 train_img, train_label = zip(*trainset)
 
-with h5py.File(os.path.join("./dataset", "train.h5"), 'a') as f:
+if not os.path.exists(os.path.join('./dataset/', "hdf5_train")):
+    os.mkdir(os.path.join('./dataset', "hdf5_train"))
+
+with h5py.File(os.path.join("./dataset", "hdf5_train", "train.h5"), 'a') as f:
     # images
     f.create_dataset("data", (len(train_img), 256*256*3), np.float32)
     for i, path in enumerate(tqdm(train_img)):
@@ -28,8 +31,8 @@ with h5py.File(os.path.join("./dataset", "train.h5"), 'a') as f:
         f["data"][i, ...] = img[None]
 
     # labels
-    f.create_dataset("labels", (len(train_label),), np.int8)
-    f["labels"][...] = train_label
+    f.create_dataset("label", (len(train_label),), np.int8)
+    f["label"][...] = train_label
 
 print("train.h5 created!")
 
@@ -44,7 +47,10 @@ for i, subdir in enumerate(os.listdir(os.path.join("./dataset", "test"))):
 
 test_img, test_label = zip(*testset)
 
-with h5py.File(os.path.join("./dataset", "test.h5"), 'a') as f:
+if not os.path.exists(os.path.join('./dataset', "hdf5_test")):
+    os.mkdir(os.path.join('./dataset', "hdf5_test"))
+
+with h5py.File(os.path.join("./dataset", "hdf5_test", "test.h5"), 'a') as f:
     # images
     f.create_dataset("data", (len(test_img), 256*256*3), np.float32)
     for i, path in enumerate(tqdm(test_img)):
@@ -56,7 +62,7 @@ with h5py.File(os.path.join("./dataset", "test.h5"), 'a') as f:
         f["data"][i, ...] = img[None]
 
     # labels
-    f.create_dataset("labels", (len(test_label),), np.int8)
-    f["labels"][...] = test_label
+    f.create_dataset("label", (len(test_label),), np.int8)
+    f["label"][...] = test_label
 
 print("test.h5 created!")

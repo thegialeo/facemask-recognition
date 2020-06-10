@@ -1,5 +1,5 @@
 import os
-import  argparse
+import argparse
 import torch
 import torch.nn as nn
 import torch.utils.data as data
@@ -8,7 +8,8 @@ from torchvision import models
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import time
-from HDF5Dataset import HDF5Dataset
+import h5py
+from NumpyDataset import NumpyDataset
 
 def get_device():
     """
@@ -25,16 +26,25 @@ def load_dataset():
     """
     Load train- and testset from subfolder 'dataset'.
     Download dataset from: https://www.kaggle.com/ahmetfurkandemr/mask-datasets-v1/data
+    Run png_to_hdf5.py
     :return: trainset, testset
     """
 
-    train_path = os.path.join('./dataset', 'train.h5')
-    test_path = os.path.join('./dataset', 'test.h5')
+    train_path = os.path.join('./dataset', 'hdf5_train', 'train.h5')
+    test_path = os.path.join('./dataset', 'hdf5_test', 'test.h5')
 
-    transform = transforms.Compose([transforms.ToTensor()])
+    f_train = h5py.File(train_path, 'r', driver='core')
+    f_test = h5py.File(test_path, 'r', driver='core')
 
-    trainset = HDF5Dataset(train_path, False, True, transform=transform)
-    testset = HDF5Dataset(test_path, False, True, transform=transform)
+    x_train = f_train['data'].value.reshape(-1, 3, 256, 256)
+    y_train = f_train['label'].value
+    x_test = f_test['data'].value.reshape(-1, 3, 256, 256)
+    y_test = f_test['label'].value
+
+    #transform = transforms.Compose([transforms.ToTensor()])
+
+    trainset = NumpyDataset(x_train, y_train)
+    testset = NumpyDataset(x_test, y_test)
 
     return trainset, testset
 
@@ -60,7 +70,7 @@ def evaluate(net, loader, device, mobilenet=None):
                 feat = feat.view(feat.size(0), -1)
             else:
                 feat = img
-            out = net(img)
+            out = net(feat)
             _, pred = torch.max(out.data, 1)
             total += label.size(0)
             correct += (pred == label).sum().item()
@@ -122,8 +132,8 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
         loss_hist.append(running_loss)
         train_acc_hist.append(train_acc)
         test_acc_hist.append(test_acc)
-        print('epoch {} \t loss {:.5f} \t train acc {:.3f} \t test acc {:.3f}'.format(epoch+1, running_loss,
-                                                                                      train_acc, test_acc))
+        print('epoch {} \t loss {:.5f} \t train acc {:.3f} \t test acc {:.3f} \t time {:.1f} sec'.format(
+            epoch+1, running_loss, train_acc, test_acc, time.time() - start))
 
         # create directory
         if not os.path.exists('./plots'):
@@ -173,6 +183,8 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
 if __name__ == "__main__":
     # parser
     parser = argparse.ArgumentParser()
+    parser.add_argument("--train_mode", dest='mode', action='store',
+                        help="Training mode: from_scratch, finetune, transfer")
     parser.add_argument("--num_epoch", dest='num_epochs', action='store', type=int,
                         help="Number of Epochs")
     parser.add_argument("--learning_rate", dest='lr', action='store', type=float,
@@ -184,7 +196,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", dest='num_workers', action='store', type=int,
                         help="Number of workers for dataloader")
 
-    parser.set_defaults(num_epochs=100, lr=1e-2, steps_epochs=[50, 80, 100], batch_size=128, num_workers=8)
+    parser.set_defaults(mode='from_scratch', num_epochs=100, lr=1e-2, steps_epochs=[50, 80, 100], batch_size=128, num_workers=0)
     args = parser.parse_args()
 
     # check if GPU available
@@ -199,7 +211,12 @@ if __name__ == "__main__":
     testloader = data.DataLoader(testset, args.batch_size)
 
     # model
-    net = models.mobilenet_v2(pretrained=False).to(device)
+    if args.mode == 'from_scratch':
+        net = models.mobilenet_v2(pretrained=False).to(device)
+    elif args.mode == 'finetune':
+        net = models.mobilenet_v2(pretrained=True).to(device)
+    elif args.mode == 'transfer':
+        net = 
 
     # scheduler + optimizer
     criterion = nn.CrossEntropyLoss()
