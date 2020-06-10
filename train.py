@@ -1,5 +1,6 @@
 import os
 import argparse
+import pickle
 import torch
 import torch.nn as nn
 import torch.utils.data as data
@@ -37,25 +38,28 @@ def load_dataset():
     f_train = h5py.File(train_path, 'r', driver='core')
     f_test = h5py.File(test_path, 'r', driver='core')
 
-    x_train = f_train['data'].value.reshape(-1, 3, 256, 256)
-    y_train = f_train['label'].value
-    x_test = f_test['data'].value.reshape(-1, 3, 256, 256)
-    y_test = f_test['label'].value
+    x_train = f_train['data'][()].reshape(-1, 3, 256, 256)
+    y_train = f_train['label'][()]
+    x_test = f_test['data'][()].reshape(-1, 3, 256, 256)
+    y_test = f_test['label'][()]
 
     # data augmentation
-    transform = transforms.Compose([transforms.ToPILImage,
-                                    transforms.RandomVerticalFlip(),
-                                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.2),
-                                    transforms.RandomPerspective(),
-                                    transforms.RandomResizedCrop((256, 256)),
-                                    transforms.ToTensor(),
-                                    transforms.RandomErasing(),
-                                    transforms.Normalize(
-                                        [0.47333890199661255, 0.4121790826320648, 0.38239002227783203],
-                                        [0.24937640130519867, 0.23304365575313568, 0.232471764087677])])
+    transform_train = transforms.Compose([transforms.ToPILImage(),
+                                          transforms.RandomVerticalFlip(),
+                                          transforms.ColorJitter(0.2, 0.2, 0.2, 0.2),
+                                          transforms.RandomPerspective(),
+                                          transforms.RandomResizedCrop((256, 256)),
+                                          transforms.ToTensor(),
+                                          transforms.RandomErasing(),
+                                          transforms.Normalize(
+                                              [0.47333890199661255, 0.4121790826320648, 0.38239002227783203],
+                                              [0.24937640130519867, 0.23304365575313568, 0.232471764087677])])
 
-    trainset = NumpyDataset(x_train, y_train, transform)
-    testset = NumpyDataset(x_test, y_test)
+    transform_test = transforms.Normalize([0.47333890199661255, 0.4121790826320648, 0.38239002227783203],
+                                          [0.24937640130519867, 0.23304365575313568, 0.232471764087677])
+
+    trainset = NumpyDataset(x_train, y_train, transform_train)
+    testset = NumpyDataset(x_test, y_test, transform_test)
 
     return trainset, testset
 
@@ -190,6 +194,10 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
         print('Final Loss:', loss_hist[-1], file=file)
         print('Final Train Accuracy:', train_acc_hist[-1], file=file)
         print('Final Test Accuracy:', test_acc_hist[-1], file=file)
+
+        # save variables
+        with open(os.path.join('./logs', 'log' + name + '.pkl'), 'wb') as f:
+            pickle.dump([loss_hist, train_acc_hist, test_acc_hist], f)
 
 
 if __name__ == "__main__":
