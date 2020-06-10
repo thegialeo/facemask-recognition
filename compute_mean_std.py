@@ -3,7 +3,7 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from tqdm import tqdm
 
-transform = transforms.Compose([transforms.Resize((256, 256)), transforms.ToTensor()])
+transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
 trainset = datasets.ImageFolder("./dataset/train", transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=10, num_workers=0, shuffle=False)
 

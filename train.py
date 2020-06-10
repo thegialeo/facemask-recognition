@@ -137,7 +137,7 @@ def train(net, trainloader, testloader, criterion, optimizer, scheduler, num_epo
 
             # record
             curr_loss = torch.mean(loss).item()
-            running_loss = (curr_loss if ((i==0) and (epoch==0)) else (1 - 0.01) * running_loss + 0.01 * curr_loss)
+            running_loss = (curr_loss if ((i==0) and (epoch==0)) else (1 - 0.5) * running_loss + 0.5 * curr_loss)
 
         scheduler.step()
 
@@ -227,7 +227,7 @@ if __name__ == "__main__":
         args.mode = 'transfer'
 
     # name extension
-    name = args.mode
+    name = '_' + args.mode
 
     # check if GPU available
     device = get_device()
@@ -250,8 +250,7 @@ if __name__ == "__main__":
         net = models.mobilenet_v2(pretrained=True).to(device)
     elif args.mode == 'transfer' and args.layer is not None:
         mobilenet = models.mobilenet_v2(pretrained=True).features[:args.layer]
-        batch = next(iter(trainloader))
-        net = classifier(batch)
+        net = classifier(args.layer)
         name += '{}'.format(args.layer)
     else:
         if args.mode == 'transfer' and args is None:

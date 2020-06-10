@@ -21,10 +21,10 @@ if not os.path.exists(os.path.join('./dataset/', "hdf5_train")):
 
 with h5py.File(os.path.join("./dataset", "hdf5_train", "train.h5"), 'a') as f:
     # images
-    f.create_dataset("data", (len(train_img), 256*256*3), np.float32)
+    f.create_dataset("data", (len(train_img), 224*224*3), np.float32)
     for i, path in enumerate(tqdm(train_img)):
         img = cv2.imread(path)
-        img = cv2.resize(img, (256, 256), interpolation=cv2.INTER_CUBIC)
+        img = cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img / 255
         img = img.ravel()
@@ -52,10 +52,10 @@ if not os.path.exists(os.path.join('./dataset', "hdf5_test")):
 
 with h5py.File(os.path.join("./dataset", "hdf5_test", "test.h5"), 'a') as f:
     # images
-    f.create_dataset("data", (len(test_img), 256*256*3), np.float32)
+    f.create_dataset("data", (len(test_img), 224*224*3), np.float32)
     for i, path in enumerate(tqdm(test_img)):
         img = cv2.imread(path)
-        img = cv2.resize(img, (256, 256), interpolation=cv2.INTER_CUBIC)
+        img = cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img / 255
         img = img.ravel()
