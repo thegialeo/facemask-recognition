@@ -42,9 +42,19 @@ def load_dataset():
     x_test = f_test['data'].value.reshape(-1, 3, 256, 256)
     y_test = f_test['label'].value
 
-    #transform = transforms.Compose([transforms.ToTensor()])
+    # data augmentation
+    transform = transforms.Compose([transforms.ToPILImage,
+                                    transforms.RandomVerticalFlip(),
+                                    transforms.ColorJitter(0.2, 0.2, 0.2, 0.2),
+                                    transforms.RandomPerspective(),
+                                    transforms.RandomResizedCrop((256, 256)),
+                                    transforms.ToTensor(),
+                                    transforms.RandomErasing(),
+                                    transforms.Normalize(
+                                        [0.47333890199661255, 0.4121790826320648, 0.38239002227783203],
+                                        [0.24937640130519867, 0.23304365575313568, 0.232471764087677])])
 
-    trainset = NumpyDataset(x_train, y_train)
+    trainset = NumpyDataset(x_train, y_train, transform)
     testset = NumpyDataset(x_test, y_test)
 
     return trainset, testset
