@@ -6,6 +6,8 @@ import h5py
 from random import shuffle
 from tqdm import tqdm
 
+
+
 # trainset
 print("Converting trainset to hdf5")
 for i, subdir in enumerate(os.listdir(os.path.join("./dataset", "train"))):
@@ -66,3 +68,8 @@ with h5py.File(os.path.join("./dataset", "hdf5_test", "test.h5"), 'a') as f:
     f["label"][...] = test_label
 
 print("test.h5 created!")
+
+
+
+# detection
+print("Converting detection dataset to hdf5")

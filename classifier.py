@@ -27,12 +27,11 @@ class classifier(nn.Module):
         }
 
         self.input_size = num_layer_to_input_size_dict[num_layer]
-        self.fc1 = nn.Linear(self.input_size, self.input_size)
-        self.fc2 = nn.Linear(self.input_size, self.input_size)
-        self.fc3 = nn.Linear(self.input_size, 2)
+        self.fc1 = nn.Linear(self.input_size, 4096)
+        self.fc2 = nn.Linear(4096, 1024)
+        self.fc3 = nn.Linear(1024, 2)
 
     def forward(self, x):
-        x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
