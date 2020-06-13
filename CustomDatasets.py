@@ -20,5 +20,5 @@ class NumpyDataset(data.Dataset):
         return len(self.data)
 
 class DetectionDataset(data.Dataset):
-    def __init__(self, data, target, transfrom=None):
+    def __init__(self, data, target, transform=None):
         self.data =
