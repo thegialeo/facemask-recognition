@@ -19,6 +19,8 @@ class NumpyDataset(data.Dataset):
     def __len__(self):
         return len(self.data)
 
+
+"""
 class DetectionDataset(data.Dataset):
     def __init__(self, data, target, transform=None):
-        self.data =
+   """

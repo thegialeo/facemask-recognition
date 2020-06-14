@@ -1,5 +1,6 @@
 import os
 import h5py
+import torch
 import torchvision.transforms as transforms
 import xmltodict
 import cv2
@@ -85,41 +86,73 @@ def visualize_image(image_name, bndbox=True):
 
 
 
-def load_dataset():
+def split_dataset(dataset, ratio, batch_size, pin_memory=True):
+    """
+    Split a dataset into two subset. e.g. trainset and validation-/testset
+    :param dataset: dataset, which should be split
+    :param ratio: the ratio the two splitted datasets should have to each other
+    :param pin_memory: pin_memory argument for pytorch dataloader, will be simply forwarded
+    :return: dataloader_1, dataloader_2
+    """
+
+    indices = torch.randperm(len(dataset))
+    idx_1 = indices[:len(indices) - int(ratio * len(indices))]
+    idx_2 = indices[len(indices) - int(ratio * len(indices)):]
+
+    dataloader_1 = torch.utils.data.DataLoader(dataset, pin_memory=pin_memory, batch_size=batch_size,
+                                               sampler=torch.utils.data.sampler.SubsetRandomSampler(idx_1),
+                                               num_workers=8, drop_last=True)
+
+    dataloader_2 = torch.utils.data.DataLoader(dataset, pin_memory=pin_memory, batch_size=batch_size,
+                                               sampler=torch.utils.data.sampler.SubsetRandomSampler(idx_2),
+                                               num_workers=8, drop_last=True)
+
+    return dataloader_1, dataloader_2
+
+
+
+def load_dataset(detection=False):
     """
     Load train- and testset from subfolder 'dataset'.
     Download dataset from: https://www.kaggle.com/ahmetfurkandemr/mask-datasets-v1/data
     Run png_to_hdf5.py
+    :param detection: If true, load detection dataset instead
     :return: trainset, testset
     """
+    if detection:
+        path = os.path.join('.', 'dataset', 'hdf5_detection')
+        f_h5py = h5py.File(os.path.join(path, 'detection.h5') , 'r', driver=None)
+        with open(fdoin())
+        x_data = f_h5py['data'][()].reshape(-1, 3, 224, 224)
+        y_data =
+    else:
+        train_path = os.path.join('.', 'dataset', 'hdf5_train', 'train.h5')
+        test_path = os.path.join('.', 'dataset', 'hdf5_test', 'test.h5')
 
-    train_path = os.path.join('./dataset', 'hdf5_train', 'train.h5')
-    test_path = os.path.join('./dataset', 'hdf5_test', 'test.h5')
+        f_train = h5py.File(train_path, 'r', driver=None)
+        f_test = h5py.File(test_path, 'r', driver=None)
 
-    f_train = h5py.File(train_path, 'r', driver=None)
-    f_test = h5py.File(test_path, 'r', driver=None)
+        x_train = f_train['data'][()].reshape(-1, 3, 224, 224)
+        y_train = f_train['label'][()]
+        x_test = f_test['data'][()].reshape(-1, 3, 224, 224)
+        y_test = f_test['label'][()]
 
-    x_train = f_train['data'][()].reshape(-1, 3, 224, 224)
-    y_train = f_train['label'][()]
-    x_test = f_test['data'][()].reshape(-1, 3, 224, 224)
-    y_test = f_test['label'][()]
+        # data augmentation
+        transform_train = transforms.Compose([transforms.ToPILImage(),
+                                              transforms.RandomVerticalFlip(),
+                                              transforms.ColorJitter(0.2, 0.2, 0.2, 0.2),
+                                              transforms.RandomPerspective(),
+                                              transforms.RandomResizedCrop((224, 224), (0.7, 1.0)),
+                                              transforms.ToTensor(),
+                                              transforms.RandomErasing(),
+                                              transforms.Normalize(
+                                                  [0.47329697012901306, 0.412136435508728, 0.38234803080558777],
+                                                  [0.24916036427021027, 0.23281708359718323, 0.23224322497844696])])
 
-    # data augmentation
-    transform_train = transforms.Compose([transforms.ToPILImage(),
-                                          transforms.RandomVerticalFlip(),
-                                          transforms.ColorJitter(0.2, 0.2, 0.2, 0.2),
-                                          transforms.RandomPerspective(),
-                                          transforms.RandomResizedCrop((224, 224), (0.7, 1.0)),
-                                          transforms.ToTensor(),
-                                          transforms.RandomErasing(),
-                                          transforms.Normalize(
-                                              [0.47329697012901306, 0.412136435508728, 0.38234803080558777],
-                                              [0.24916036427021027, 0.23281708359718323, 0.23224322497844696])])
+        transform_test = transforms.Normalize([0.47329697012901306, 0.412136435508728, 0.38234803080558777],
+                                              [0.24916036427021027, 0.23281708359718323, 0.23224322497844696])
 
-    transform_test = transforms.Normalize([0.47329697012901306, 0.412136435508728, 0.38234803080558777],
-                                          [0.24916036427021027, 0.23281708359718323, 0.23224322497844696])
-
-    trainset = NumpyDataset(x_train, y_train, transform_train)
-    testset = NumpyDataset(x_test, y_test, transform_test)
+        trainset = NumpyDataset(x_train, y_train, transform_train)
+        testset = NumpyDataset(x_test, y_test, transform_test)
 
     return trainset, testset

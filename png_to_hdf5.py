@@ -1,11 +1,12 @@
 import os
 import glob
+import json
 import numpy as np
 import cv2
 import h5py
 from random import shuffle
 from tqdm import tqdm
-from dataloader import getImageNames, get_path
+from dataloader import getImageNames, get_path, parse_xml
 
 
 
@@ -82,6 +83,7 @@ if not os.path.exists(os.path.join('.', 'dataset', 'hdf5_detection')):
 with h5py.File(os.path.join(".", "dataset", "hdf5_detection", "detection.h5"), 'a') as f:
     f.create_dataset("data", (len(all_img), 224*224*3), np.float32)
     f.create_dataset("label", (len(all_img),), h5py.string_dtype())
+    label = {}
     for i, name in enumerate(tqdm(all_img)):
         image_path, label_path = get_path(name)
         img = cv2.imread(image_path)
@@ -91,5 +93,8 @@ with h5py.File(os.path.join(".", "dataset", "hdf5_detection", "detection.h5"), '
         img = img.ravel()
         f["data"][i, ...] = img[None]
         f["label"][i, ...] = label_path
+        label[label_path], _ = parse_xml(label_path)
+    with open(os.path.join(".", "dataset", "hdf5_detection", "detection.txt"), 'w') as file:
+        json.dump(label, file)
 
-print("detection.h5 creadted!")
+print("detection.h5 created!")
