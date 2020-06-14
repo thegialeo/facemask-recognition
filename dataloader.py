@@ -130,6 +130,9 @@ def load_dataset(detection=False):
         x_data = f_h5py['data'][()].reshape(-1, 3, 224, 224)
         y_data = f_h5py['label'][()]
 
+        # data augmentation
+        transforms = transforms.Normalize([0.4454523026943207, 0.4200827479362488, 0.4140508770942688],
+                                          [0.2556115388870239, 0.24527578055858612, 0.24393153190612793])
 
     else:
         train_path = os.path.join('.', 'dataset', 'hdf5_train', 'train.h5')
