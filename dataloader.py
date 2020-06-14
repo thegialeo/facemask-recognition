@@ -123,10 +123,14 @@ def load_dataset(detection=False):
     if detection:
         path = os.path.join('.', 'dataset', 'hdf5_detection')
         f_h5py = h5py.File(os.path.join(path, 'detection.h5') , 'r', driver=None)
+
         with open(os.path.join(path, 'detection.txt'), 'r') as file:
             label_dict = json.load(file)
+
         x_data = f_h5py['data'][()].reshape(-1, 3, 224, 224)
         y_data = f_h5py['label'][()]
+
+
     else:
         train_path = os.path.join('.', 'dataset', 'hdf5_train', 'train.h5')
         test_path = os.path.join('.', 'dataset', 'hdf5_test', 'test.h5')
