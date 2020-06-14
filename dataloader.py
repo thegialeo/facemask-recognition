@@ -1,5 +1,6 @@
 import os
 import h5py
+import json
 import torch
 import torchvision.transforms as transforms
 import xmltodict
@@ -46,8 +47,8 @@ def parse_xml(label_path):
 
     for item in item_list:
         name = item['name']
-        bndbox = [(int(item['bndbox']['xmin']), int(item['bndbox']['ymin'])),
-                  (int(item['bndbox']['xmax']), int(item['bndbox']['ymax']))]
+        bndbox = [int(item['bndbox']['xmin']), int(item['bndbox']['ymin']),
+                  int(item['bndbox']['xmax']), int(item['bndbox']['ymax'])]
         result.append((name, bndbox))
 
     size = [int(x['annotation']['size']['width']),
@@ -122,9 +123,10 @@ def load_dataset(detection=False):
     if detection:
         path = os.path.join('.', 'dataset', 'hdf5_detection')
         f_h5py = h5py.File(os.path.join(path, 'detection.h5') , 'r', driver=None)
-        with open(fdoin())
+        with open(os.path.join(path, 'detection.txt'), 'r') as file:
+            label_dict = json.load(file)
         x_data = f_h5py['data'][()].reshape(-1, 3, 224, 224)
-        y_data =
+        y_data = f_h5py['label'][()]
     else:
         train_path = os.path.join('.', 'dataset', 'hdf5_train', 'train.h5')
         test_path = os.path.join('.', 'dataset', 'hdf5_test', 'test.h5')
