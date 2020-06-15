@@ -1,7 +1,6 @@
 import os
 import h5py
 import json
-import torch
 from torch.utils import data
 import torchvision.transforms as transforms
 import xmltodict
@@ -73,9 +72,9 @@ def visualize_image(image_name, bndbox=True):
             name, bndbox = label
 
             if name == 'good':
-                cv2.rectangle(image, bndbox[0], bndbox[1], (0, 255, 0), thickness)
+                cv2.rectangle(image, (bndbox[0], bndbox[1]), (bndbox[2], bndbox[3]), (0, 255, 0), thickness)
             elif name == 'bad':
-                cv2.rectangle(image, bndbox[0], bndbox[1], (255, 0, 0), thickness)
+                cv2.rectangle(image, (bndbox[0], bndbox[1]), (bndbox[2], bndbox[3]), (255, 0, 0), thickness)
             else:  # name == 'none'
                 cv2.rectangle(image, bndbox[0], bndbox[1], (0, 0, 255), thickness)
 
