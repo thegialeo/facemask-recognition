@@ -3,11 +3,9 @@ import torch
 import torch.nn as nn
 import torch.utils.data as data
 import torch.optim as opt
-import torchvision
 from torchvision import models
 from torchvision.models.detection import FasterRCNN, fasterrcnn_resnet50_fpn
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.rpn import AnchorGenerator
 import utils
 from GPU import get_device
 from dataloader import load_dataset
@@ -112,7 +110,7 @@ if __name__ == "__main__":
 
     # training
     train(model, trainloader, testloader, criterion, optimizer, scheduler, args.num_epochs, device, args.mode,
-              args.detection)
+          args.detection)
 
     # free GPU space
     del model

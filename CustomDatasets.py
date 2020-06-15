@@ -39,14 +39,19 @@ class DetectionDataset(data.Dataset):
                 label = 1
             elif box[0] == 'bad':
                 label = 2
+            elif box[0] == 'none':
+                label = 3
             else:
                 print("Something is wrong with label: {}".format(box[0]))
             labels.append(label)
-            boxes.append([box[1]])
+            boxes.append(box[1])
+
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        labels =  torch.as_tensor(labels, dtype=torch.int64)
 
         y = {}
-        y["boxes"] = torch.as_tensor(boxes, dtype=torch.float32)
-        y["labels"] = torch.as_tensor(labels, dtype=torch.int64)
+        y["boxes"] = boxes
+        y["labels"] = labels
         y["image_id"] = torch.tensor([index])
         y["area"] = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         y["iscrowd"] = torch.zeros((len(y_item_list),), dtype=torch.int64) # assume no instances are crowd

@@ -49,7 +49,7 @@ def train(model, trainloader, testloader, criterion, optimizer, scheduler, num_e
 
     if detection:
         for epoch in range(num_epochs):
-            train_one_epoch(model, optimizer, trainloader, device, num_epochs, print_freq=10)
+            train_one_epoch(model, optimizer, trainloader, device, epoch, print_freq=10)
             scheduler.step()
             evaluate(model, testloader, device=device)
     else:
