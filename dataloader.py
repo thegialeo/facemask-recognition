@@ -2,11 +2,12 @@ import os
 import h5py
 import json
 import torch
+from torch.utils import data
 import torchvision.transforms as transforms
 import xmltodict
 import cv2
 import matplotlib.pyplot as plt
-from CustomDatasets import NumpyDataset
+from CustomDatasets import NumpyDataset, DetectionDataset
 
 def getImageNames():
     image_names = []
@@ -87,31 +88,6 @@ def visualize_image(image_name, bndbox=True):
 
 
 
-def split_dataset(dataset, ratio, batch_size, pin_memory=True):
-    """
-    Split a dataset into two subset. e.g. trainset and validation-/testset
-    :param dataset: dataset, which should be split
-    :param ratio: the ratio the two splitted datasets should have to each other
-    :param pin_memory: pin_memory argument for pytorch dataloader, will be simply forwarded
-    :return: dataloader_1, dataloader_2
-    """
-
-    indices = torch.randperm(len(dataset))
-    idx_1 = indices[:len(indices) - int(ratio * len(indices))]
-    idx_2 = indices[len(indices) - int(ratio * len(indices)):]
-
-    dataloader_1 = torch.utils.data.DataLoader(dataset, pin_memory=pin_memory, batch_size=batch_size,
-                                               sampler=torch.utils.data.sampler.SubsetRandomSampler(idx_1),
-                                               num_workers=8, drop_last=True)
-
-    dataloader_2 = torch.utils.data.DataLoader(dataset, pin_memory=pin_memory, batch_size=batch_size,
-                                               sampler=torch.utils.data.sampler.SubsetRandomSampler(idx_2),
-                                               num_workers=8, drop_last=True)
-
-    return dataloader_1, dataloader_2
-
-
-
 def load_dataset(detection=False):
     """
     Load train- and testset from subfolder 'dataset'.
@@ -130,9 +106,12 @@ def load_dataset(detection=False):
         x_data = f_h5py['data'][()].reshape(-1, 3, 224, 224)
         y_data = f_h5py['label'][()]
 
-        # data augmentation
-        transforms = transforms.Normalize([0.4454523026943207, 0.4200827479362488, 0.4140508770942688],
+        # normalization
+        transform = transforms.Normalize([0.4454523026943207, 0.4200827479362488, 0.4140508770942688],
                                           [0.2556115388870239, 0.24527578055858612, 0.24393153190612793])
+
+        dataset = DetectionDataset(x_data, y_data, label_dict, transform)
+        trainset, testset = data.random_split(dataset, [542, 136])
 
     else:
         train_path = os.path.join('.', 'dataset', 'hdf5_train', 'train.h5')
