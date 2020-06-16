@@ -46,10 +46,10 @@ class DetectionDataset(data.Dataset):
             else:
                 print("Something is wrong with label: {}".format(box[0]))
             labels.append(label)
-            xmin = box[1][0] * 255 / size[0]
-            ymin = box[1][1] * 255 / size[1]
-            xmax = box[1][2] * 255 / size[0]
-            ymax = box[1][3] * 255 / size[1]
+            xmin = box[1][0] * 224 / size[0]
+            ymin = box[1][1] * 224 / size[1]
+            xmax = box[1][2] * 224 / size[0]
+            ymax = box[1][3] * 224 / size[1]
             boxes.append([xmin, ymin, xmax, ymax])
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
@@ -61,6 +61,7 @@ class DetectionDataset(data.Dataset):
         y["image_id"] = torch.tensor([index])
         y["area"] = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         y["iscrowd"] = torch.zeros((len(y_item_list),), dtype=torch.int64) # assume no instances are crowd
+        y["name"] = self.target[index]
 
         if self.transform is not None:
             x = self.transform(x)

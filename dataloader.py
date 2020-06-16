@@ -76,7 +76,7 @@ def visualize_image(image_name, bndbox=True):
             elif name == 'bad':
                 cv2.rectangle(image, (bndbox[0], bndbox[1]), (bndbox[2], bndbox[3]), (255, 0, 0), thickness)
             else:  # name == 'none'
-                cv2.rectangle(image, bndbox[0], bndbox[1], (0, 0, 255), thickness)
+                cv2.rectangle(image, (bndbox[0], bndbox[1]), (bndbox[2], bndbox[3]), (0, 0, 255), thickness)
 
     plt.figure(figsize=(20, 20))
     plt.subplot(1, 2, 1)
@@ -112,7 +112,7 @@ def load_dataset(detection=False):
         transform = transforms.Normalize([0.44546014070510864, 0.4201653301715851, 0.4142392575740814],
                                           [0.255580872297287, 0.2452726811170578, 0.24397742748260498])
 
-        dataset = DetectionDataset(x_data, y_data, label_dict, size_dict, transform)
+        dataset = DetectionDataset(x_data, y_data, label_dict, size_dict, None)
         trainset, testset = data.random_split(dataset, [542, 135])
 
     else:
