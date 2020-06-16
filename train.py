@@ -62,10 +62,10 @@ if __name__ == "__main__":
         print("Initialize Training Mode: {}".format(args.mode))
         if args.mode == 'backbone':
             # model
-            backbone = models.mobilenet_v2(pretrained=True).features.to(device)
+            backbone = models.mobilenet_v2(pretrained=True).features
             backbone.out_channels = 1280
-            anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),), aspect_ratios=((0.5, 1.0, 2.0),)).to(device)
-            roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0], output_size=7, sampling_ratio=2).to(device)
+            anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),), aspect_ratios=((0.5, 1.0, 2.0),))
+            roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0], output_size=7, sampling_ratio=2)
             model = FasterRCNN(backbone, num_classes=4, rpn_anchor_generator=anchor_generator, box_roi_pool=roi_pooler).to(device)
         elif args.mode == 'finetune':
             # model
@@ -111,7 +111,7 @@ if __name__ == "__main__":
                 print("Error: Training Mode {} is not defined!".format(args.mode))
 
     # optimizer
-    optimizer = opt.Adam(model.parameters(), lr=args.lr)
+    optimizer = opt.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=0.0005)
 
     # criterion
     criterion = nn.CrossEntropyLoss()
