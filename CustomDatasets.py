@@ -47,7 +47,7 @@ class DetectionDataset(data.Dataset):
             boxes.append(box[1])
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        labels =  torch.as_tensor(labels, dtype=torch.int64)
+        labels = torch.as_tensor(labels, dtype=torch.int64)
 
         y = {}
         y["boxes"] = boxes

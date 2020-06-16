@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--detection", dest='detection', action='store_true',
                         help="Training object detection")
     parser.add_argument("--train_mode", dest='mode', action='store',
-                        help="Training mode: from_scratch, finetune, small_net")
+                        help="Training mode: from_scratch, finetune, small_net, backbone")
     parser.add_argument("--transfer_layer", dest='layer', action='store', type=int,
                         help="Layer of mobilenet to get the features from")
     parser.add_argument("--num_epoch", dest='num_epochs', action='store', type=int,
@@ -48,7 +48,10 @@ if __name__ == "__main__":
 
     # load data
     trainset, testset = load_dataset(detection=args.detection)
-    print("Load data")
+    if args.detection:
+        print("Load object detection dataset")
+    else:
+        print("Load single person dataset")
 
     # dataloader
     trainloader = data.DataLoader(trainset, args.batch_size, True, num_workers=args.num_workers,
@@ -56,13 +59,14 @@ if __name__ == "__main__":
     testloader = data.DataLoader(testset, args.batch_size, collate_fn=utils.collate_fn)
 
     if args.detection:
+        print("Initialize Training Mode: {}".format(args.mode))
         if args.mode == 'backbone':
             # model
-            backbone = models.mobilenet_v2(pretrained=True).features
+            backbone = models.mobilenet_v2(pretrained=True).features.to(device)
             backbone.out_channels = 1280
-            anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),), aspect_ratios=((0.5, 1.0, 2.0),))
-            roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0], output_size=7, sampling_ratio=2)
-            model = FasterRCNN(backbone, num_classes=2, rpn_anchor_generator=anchor_generator, box_roi_pool=roi_pooler)
+            anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),), aspect_ratios=((0.5, 1.0, 2.0),)).to(device)
+            roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0], output_size=7, sampling_ratio=2).to(device)
+            model = FasterRCNN(backbone, num_classes=4, rpn_anchor_generator=anchor_generator, box_roi_pool=roi_pooler).to(device)
         elif args.mode == 'finetune':
             # model
             model = fasterrcnn_resnet50_fpn(pretrained=True).to(device)

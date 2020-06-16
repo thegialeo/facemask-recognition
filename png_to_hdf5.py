@@ -85,6 +85,7 @@ def convert_detecttion_set():
         f.create_dataset("data", (len(all_img), 224*224*3), np.float32)
         f.create_dataset("label", (len(all_img),), h5py.string_dtype())
         label = {}
+        size = {}
         for i, name in enumerate(tqdm(all_img)):
             image_path, label_path = get_path(name)
             img = cv2.imread(image_path)
@@ -94,11 +95,15 @@ def convert_detecttion_set():
             img = img.ravel()
             f["data"][i, ...] = img[None]
             f["label"][i, ...] = label_path
-            label[label_path], _ = parse_xml(label_path)
-        with open(os.path.join(".", "dataset", "hdf5_detection", "detection.txt"), 'w') as file:
+            label[label_path], size[label_path] = parse_xml(label_path)
+        with open(os.path.join(".", "dataset", "hdf5_detection", "label.txt"), 'w') as file:
             json.dump(label, file)
+        with open(os.path.join(".", "dataset", "hdf5_detection", "size.txt"), 'w') as file:
+            json.dump(size, file)
 
     print("detection.h5 created!")
+    print("label.txt created!")
+    print("size.txt created!")
 
 
 
