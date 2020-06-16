@@ -1,4 +1,4 @@
-# Exoplanet Detection
+# Facemask Detection
 
 ## Requirements
 > pip install -r requirements.txt
