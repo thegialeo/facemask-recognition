@@ -23,9 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--detection", dest='detection', action='store_true',
                         help="Training object detection")
     parser.add_argument("--train_mode", dest='mode', action='store',
-                        help="Training mode: from_scratch, finetune, small_net, backbone")
-    parser.add_argument("--transfer_layer", dest='layer', action='store', type=int,
-                        help="Layer of mobilenet to get the features from")
+                        help="Training mode: from_scratch, finetune, small_net, faster_rcnn, mtcnn")
     parser.add_argument("--num_epoch", dest='num_epochs', action='store', type=int,
                         help="Number of Epochs")
     parser.add_argument("--learning_rate", dest='lr', action='store', type=float,
@@ -60,14 +58,9 @@ if __name__ == "__main__":
 
     if args.detection:
         print("Initialize Training Mode: {}".format(args.mode))
-        if args.mode == 'backbone':
-            # model
-            backbone = models.mobilenet_v2(pretrained=True).features
-            backbone.out_channels = 1280
-            anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),), aspect_ratios=((0.5, 1.0, 2.0),))
-            roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0], output_size=7, sampling_ratio=2)
-            model = FasterRCNN(backbone, num_classes=4, rpn_anchor_generator=anchor_generator, box_roi_pool=roi_pooler).to(device)
-        elif args.mode == 'finetune':
+        if args.mode == 'mtcnn':
+            model 
+        elif args.mode == 'faster_rcnn':
             # model
             model = fasterrcnn_resnet50_fpn(pretrained=True).to(device)
             in_feat = model.roi_heads.box_predictor.cls_score.in_features
@@ -100,15 +93,8 @@ if __name__ == "__main__":
                                   nn.BatchNorm1d(100),
                                   nn.Dropout(0.2),
                                   nn.Linear(100, 2)).to(device)
-        elif args.mode == 'transfer' and args.layer is not None:
-            model = models.mobilenet_v2(pretrained=True).features[:args.layer].to(device)
-            clf = classifier(args.layer).to(device)
-            print("transfer learning mode deprecated")
         else:
-            if args.mode == 'transfer' and args is None:
-                print("Error: Layer of mobilenet from which to get features is not specified!")
-            else:
-                print("Error: Training Mode {} is not defined!".format(args.mode))
+            print("Error: Training Mode {} is not defined!".format(args.mode))
 
     # optimizer
     optimizer = opt.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=0.0005)

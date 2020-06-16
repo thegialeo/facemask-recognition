@@ -51,6 +51,9 @@ def train(model, trainloader, testloader, criterion, optimizer, scheduler, num_e
         for epoch in range(num_epochs):
             train_one_epoch(model, optimizer, trainloader, device, epoch+1, print_freq=10)
             scheduler.step()
+            print("Evaluation on trainset:")
+            evaluate(model, trainloader, device=device)
+            print("Evaluation on testset:")
             evaluate(model, testloader, device=device)
     else:
         # log
