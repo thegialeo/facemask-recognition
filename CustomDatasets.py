@@ -61,7 +61,7 @@ class DetectionDataset(data.Dataset):
         y["image_id"] = torch.tensor([index])
         y["area"] = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         y["iscrowd"] = torch.zeros((len(y_item_list),), dtype=torch.int64) # assume no instances are crowd
-        y["name"] = self.target[index]
+        #y["name"] = self.target[index]
 
         if self.transform is not None:
             x = self.transform(x)

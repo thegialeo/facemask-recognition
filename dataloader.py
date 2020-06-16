@@ -112,7 +112,7 @@ def load_dataset(detection=False):
         transform = transforms.Normalize([0.44546014070510864, 0.4201653301715851, 0.4142392575740814],
                                           [0.255580872297287, 0.2452726811170578, 0.24397742748260498])
 
-        dataset = DetectionDataset(x_data, y_data, label_dict, size_dict, None)
+        dataset = DetectionDataset(x_data, y_data, label_dict, size_dict, transform)
         trainset, testset = data.random_split(dataset, [542, 135])
 
     else:
