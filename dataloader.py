@@ -99,8 +99,11 @@ def load_dataset(detection=False):
         path = os.path.join('.', 'dataset', 'hdf5_detection')
         f_h5py = h5py.File(os.path.join(path, 'detection.h5') , 'r', driver=None)
 
-        with open(os.path.join(path, 'detection.txt'), 'r') as file:
+        with open(os.path.join(path, 'label.txt'), 'r') as file:
             label_dict = json.load(file)
+
+        with open(os.path.join(path, 'size.txt'), 'r') as file:
+            size_dict = json.load(file)
 
         x_data = f_h5py['data'][()].reshape(-1, 3, 224, 224)
         y_data = f_h5py['label'][()]
@@ -109,7 +112,7 @@ def load_dataset(detection=False):
         transform = transforms.Normalize([0.4454523026943207, 0.4200827479362488, 0.4140508770942688],
                                           [0.2556115388870239, 0.24527578055858612, 0.24393153190612793])
 
-        dataset = DetectionDataset(x_data, y_data, label_dict, transform)
+        dataset = DetectionDataset(x_data, y_data, label_dict, size_dict, transform)
         trainset, testset = data.random_split(dataset, [542, 136])
 
     else:

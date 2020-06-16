@@ -22,15 +22,17 @@ class NumpyDataset(data.Dataset):
 
 
 class DetectionDataset(data.Dataset):
-    def __init__(self, data, target, target_dict, transform=None):
+    def __init__(self, data, target, label_dict, size_dict, transform=None):
         self.data = torch.from_numpy(data).float()
         self.target = target
-        self.target_dict = target_dict
+        self.label_dict = label_dict
+        self.size_dict = size_dict
         self.transform = transform
 
     def __getitem__(self, index):
         x = self.data[index]
-        y_item_list = self.target_dict[self.target[index]]
+        y_item_list = self.label_dict[self.target[index]]
+        size = self.size_dict[self.target[index]]
 
         boxes = []
         labels = []
@@ -44,7 +46,11 @@ class DetectionDataset(data.Dataset):
             else:
                 print("Something is wrong with label: {}".format(box[0]))
             labels.append(label)
-            boxes.append(box[1])
+            xmin = box[1][0] * 255 / size[0]
+            ymin = box[1][1] * 255 / size[1]
+            xmax = box[1][2] * 255 / size[0]
+            ymax = box[1][3] * 255 / size[1]
+            boxes.append([xmin, ymin, xmax, ymax])
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         labels = torch.as_tensor(labels, dtype=torch.int64)
