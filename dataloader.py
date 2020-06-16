@@ -109,11 +109,11 @@ def load_dataset(detection=False):
         y_data = f_h5py['label'][()]
 
         # normalization
-        transform = transforms.Normalize([0.4454523026943207, 0.4200827479362488, 0.4140508770942688],
-                                          [0.2556115388870239, 0.24527578055858612, 0.24393153190612793])
+        transform = transforms.Normalize([0.44546014070510864, 0.4201653301715851, 0.4142392575740814],
+                                          [0.255580872297287, 0.2452726811170578, 0.24397742748260498])
 
         dataset = DetectionDataset(x_data, y_data, label_dict, size_dict, transform)
-        trainset, testset = data.random_split(dataset, [542, 136])
+        trainset, testset = data.random_split(dataset, [542, 135])
 
     else:
         train_path = os.path.join('.', 'dataset', 'hdf5_train', 'train.h5')
