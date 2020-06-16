@@ -3,16 +3,14 @@ import torch
 import torch.nn as nn
 import torch.utils.data as data
 import torch.optim as opt
-import torchvision
 from torchvision import models
 from torchvision.models.detection import FasterRCNN, fasterrcnn_resnet50_fpn
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.rpn import AnchorGenerator
+from facenet_pytorch import MTCNN, InceptionResnetV1
 import utils
 from GPU import get_device
 from dataloader import load_dataset
 from trainer import train
-from classifier import classifier
 
 
 
@@ -56,10 +54,14 @@ if __name__ == "__main__":
                                   pin_memory=args.pin_memory, collate_fn=utils.collate_fn)
     testloader = data.DataLoader(testset, args.batch_size, collate_fn=utils.collate_fn)
 
+    mtcnn = None
+
     if args.detection:
         print("Initialize Training Mode: {}".format(args.mode))
         if args.mode == 'mtcnn':
-            model 
+            # model
+            mtcnn = MTCNN(image_size=224, keep_all=True, device=device)
+            model = InceptionResnetV1(pretrained='vggface2', classify=True, num_classes=3)
         elif args.mode == 'faster_rcnn':
             # model
             model = fasterrcnn_resnet50_fpn(pretrained=True).to(device)
@@ -107,7 +109,7 @@ if __name__ == "__main__":
 
     # training
     train(model, trainloader, testloader, criterion, optimizer, scheduler, args.num_epochs, device, args.mode,
-          args.detection)
+          args.detection, mtcnn)
 
     # free GPU space
     del model
