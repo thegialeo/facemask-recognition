@@ -43,21 +43,26 @@ if __name__ == "__main__":
     device = get_device()
 
     # load data
-    trainset, testset = load_dataset(detection=args.detection)
     if args.detection:
         if args.mode == 'mtcnn':
+            trainset, testset = load_dataset('cropped')
             print("Load cropped image dataset")
         else:
+            trainset, testset = load_dataset('detection')
             print("Load object detection dataset")
     else:
+        trainset, testset = load_dataset('single_person')
         print("Load single person dataset")
 
     # dataloader
-    trainloader = data.DataLoader(trainset, args.batch_size, True, num_workers=args.num_workers,
+    if args.mode == 'faster_rcnn':
+        trainloader = data.DataLoader(trainset, args.batch_size, True, num_workers=args.num_workers,
                                   pin_memory=args.pin_memory, collate_fn=utils.collate_fn)
-    testloader = data.DataLoader(testset, args.batch_size, collate_fn=utils.collate_fn)
-
-    mtcnn = None
+        testloader = data.DataLoader(testset, args.batch_size, collate_fn=utils.collate_fn)
+    else:
+        trainloader = data.DataLoader(trainset, args.batch_size, True, num_workers=args.num_workers,
+                                      pin_memory=args.pin_memory)
+        testloader = data.DataLoader(testset, args.batch_size)
 
     if args.detection:
         print("Initialize Training Mode: {}".format(args.mode))
@@ -112,7 +117,7 @@ if __name__ == "__main__":
 
     # training
     train(model, trainloader, testloader, criterion, optimizer, scheduler, args.num_epochs, device, args.mode,
-          args.detection, mtcnn)
+          args.detection)
 
     # free GPU space
     del model
