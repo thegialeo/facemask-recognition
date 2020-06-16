@@ -3,9 +3,11 @@ import torch
 import torch.nn as nn
 import torch.utils.data as data
 import torch.optim as opt
+import torchvision
 from torchvision import models
 from torchvision.models.detection import FasterRCNN, fasterrcnn_resnet50_fpn
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+from torchvision.models.detection.rpn import AnchorGenerator
 import utils
 from GPU import get_device
 from dataloader import load_dataset
@@ -54,15 +56,20 @@ if __name__ == "__main__":
     testloader = data.DataLoader(testset, args.batch_size, collate_fn=utils.collate_fn)
 
     if args.detection:
-        # model
-        model = fasterrcnn_resnet50_fpn(pretrained=True).to(device)
-        in_feat = model.roi_heads.box_predictor.cls_score.in_features
-        model.roi_heads.box_predictor = FastRCNNPredictor(in_feat, 3).to(device)
-
-        # optimizer
-        params = [p for p in model.parameters() if p.requires_grad]
-        optimizer = opt.Adam(params, lr=args.lr)
-
+        if args.mode == 'backbone':
+            # model
+            backbone = models.mobilenet_v2(pretrained=True).features
+            backbone.out_channels = 1280
+            anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),), aspect_ratios=((0.5, 1.0, 2.0),))
+            roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0], output_size=7, sampling_ratio=2)
+            model = FasterRCNN(backbone, num_classes=2, rpn_anchor_generator=anchor_generator, box_roi_pool=roi_pooler)
+        elif args.mode == 'finetune':
+            # model
+            model = fasterrcnn_resnet50_fpn(pretrained=True).to(device)
+            in_feat = model.roi_heads.box_predictor.cls_score.in_features
+            model.roi_heads.box_predictor = FastRCNNPredictor(in_feat, 4).to(device)
+        else:
+            print("Error: Training Mode {} is not defined for detection dataset!".format(args.mode))
     else:
         # set mode to transfer learning, if layer number of mobilenet is given
         if args.layer is not None:
@@ -99,8 +106,8 @@ if __name__ == "__main__":
             else:
                 print("Error: Training Mode {} is not defined!".format(args.mode))
 
-        # optimizer
-        optimizer = opt.Adam(model.parameters(), lr=args.lr)
+    # optimizer
+    optimizer = opt.Adam(model.parameters(), lr=args.lr)
 
     # criterion
     criterion = nn.CrossEntropyLoss()
