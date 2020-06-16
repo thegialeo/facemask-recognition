@@ -1,4 +1,5 @@
 import os
+import math
 import h5py
 import json
 from torch.utils import data
@@ -87,17 +88,18 @@ def visualize_image(image_name, bndbox=True):
 
 
 
-def load_dataset(detection=False):
+def load_dataset(dataset='single_person'):
     """
     Load train- and testset from subfolder 'dataset'.
-    Download dataset from: https://www.kaggle.com/ahmetfurkandemr/mask-datasets-v1/data
+    Download dataset: https://www.kaggle.com/ahmetfurkandemr/mask-datasets-v1/data
+    and: https://www.kaggle.com/shreyashwaghe/medical-mask-dataset
     Run png_to_hdf5.py
-    :param detection: If true, load detection dataset instead
+    :param dataset: dataset to load
     :return: trainset, testset
     """
-    if detection:
+    if dataset == 'detection':
         path = os.path.join('.', 'dataset', 'hdf5_detection')
-        f_h5py = h5py.File(os.path.join(path, 'detection.h5') , 'r', driver=None)
+        f_h5py = h5py.File(os.path.join(path, 'detection.h5'), 'r', driver=None)
 
         with open(os.path.join(path, 'label.txt'), 'r') as file:
             label_dict = json.load(file)
@@ -115,7 +117,17 @@ def load_dataset(detection=False):
         dataset = DetectionDataset(x_data, y_data, label_dict, size_dict, transform)
         trainset, testset = data.random_split(dataset, [542, 135])
 
-    else:
+    elif dataset == 'cropped':
+        path = os.path.join('.', 'dataset', 'hdf5_detection')
+        f_h5py = h5py.File(os.path.join(path, 'cropped.h5'), 'r', driver=None)
+
+        x_data = f_h5py['data'][()].reshape(-1, 3, 224, 224)
+        y_data = f_h5py['label'][()]
+
+        dataset = NumpyDataset(x_data, y_data)
+        trainset, testset = data.random_split(dataset, [math.ceil(0.8*len(dataset)), math.floor(0.2*len(dataset))])
+
+    elif dataset == 'single_person':
         train_path = os.path.join('.', 'dataset', 'hdf5_train', 'train.h5')
         test_path = os.path.join('.', 'dataset', 'hdf5_test', 'test.h5')
 
@@ -144,5 +156,8 @@ def load_dataset(detection=False):
 
         trainset = NumpyDataset(x_train, y_train, transform_train)
         testset = NumpyDataset(x_test, y_test, transform_test)
+
+    else:
+        print("dataset {} is not defined!".format(dataset))
 
     return trainset, testset

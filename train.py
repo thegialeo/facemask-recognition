@@ -45,7 +45,10 @@ if __name__ == "__main__":
     # load data
     trainset, testset = load_dataset(detection=args.detection)
     if args.detection:
-        print("Load object detection dataset")
+        if args.mode == 'mtcnn':
+            print("Load cropped image dataset")
+        else:
+            print("Load object detection dataset")
     else:
         print("Load single person dataset")
 
@@ -60,7 +63,7 @@ if __name__ == "__main__":
         print("Initialize Training Mode: {}".format(args.mode))
         if args.mode == 'mtcnn':
             # model
-            mtcnn = MTCNN(image_size=224, keep_all=True, device=device)
+            #mtcnn = MTCNN(image_size=224, keep_all=True, device=device)
             model = InceptionResnetV1(pretrained='vggface2', classify=True, num_classes=3)
         elif args.mode == 'faster_rcnn':
             # model

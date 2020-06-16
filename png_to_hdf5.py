@@ -86,6 +86,7 @@ def convert_detecttion_set():
         f.create_dataset("label", (len(all_img),), h5py.string_dtype())
         label = {}
         size = {}
+        num_box = 0
         for i, name in enumerate(tqdm(all_img)):
             image_path, label_path = get_path(name)
             img = cv2.imread(image_path)
@@ -96,14 +97,44 @@ def convert_detecttion_set():
             f["data"][i, ...] = img[None]
             f["label"][i, ...] = label_path
             label[label_path], size[label_path] = parse_xml(label_path)
+            num_box += len(label[label_path])
+        print("detection.h5 created!")
         with open(os.path.join(".", "dataset", "hdf5_detection", "label.txt"), 'w') as file:
             json.dump(label, file)
+            print("label.txt created!")
         with open(os.path.join(".", "dataset", "hdf5_detection", "size.txt"), 'w') as file:
             json.dump(size, file)
+            print("size.txt created!")
 
-    print("detection.h5 created!")
-    print("label.txt created!")
-    print("size.txt created!")
+    print("Create cropped image dataset from detection dataset")
+    with h5py.File(os.path.join(".", "dataset", "hdf5_detection", "cropped.h5"), 'a') as f:
+        f.create_dataset("data", (num_box, 224*224*3), np.float32)
+        f.create_dataset("label", (num_box,), np.int8)
+        idx = 0
+        for i, name in enumerate(tqdm(all_img)):
+            image_path, label_path = get_path(name)
+            img = cv2.imread(image_path)
+            item_list = label[label_path]
+            for j, item in enumerate(item_list):
+                if item[0] == 'good':
+                    target = 0
+                elif item[0] == 'bad':
+                    target = 1
+                elif item[0] == 'none':
+                    target = 2
+                else:
+                    print("Something is wrong with label: {}".format(item[0]))
+                box_img = img[item[1][1]:item[1][3], item[1][0]:item[1][2]]
+                box_img = cv2.resize(box_img, (224, 224), interpolation=cv2.INTER_CUBIC)
+                box_img = cv2.cvtColor(box_img, cv2.COLOR_BGR2RGB)
+                box_img = box_img / 255
+                box_img = box_img.ravel()
+                f["data"][idx, ...] = box_img[None]
+                f["label"][idx, ...] = target
+                idx += 1
+
+    print("cropped.h5 created!")
+
 
 
 
