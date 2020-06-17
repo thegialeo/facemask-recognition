@@ -3,6 +3,10 @@
 ## Requirements
 > pip install -r requirements.txt
 
+## Download our trained models
+Download the files and put them in a folder named *models*:  
+[Leo Google Drive](https://drive.google.com/drive/folders/1mNLF0mBMC64I9OA9Diw6tB6N5XYBHOK_?usp=sharing)
+
 ## Single Person Classification
 
 ### Dataset
@@ -15,15 +19,18 @@ If you have not download the dataset for Multi-Person Object Detection and creat
 > python png_to_hdf5.py --mode train  
 > python png_to_hdf5.py --mode test
 
-### Training
+### Training SVM
+> python SVM.py
+
+### Training MobileNetV2
+
+MobileNetV2 (Sandler et al., 2018)
 
 #### From Scratch
 > python train.py
 
 #### Finetune
 > python train.py --train_mode finetune
-
-### Testing
 
 ## Multi-Person Object Detection
 
@@ -40,17 +47,32 @@ Otherwise run:
 ### Training
 
 #### Faster-RCNN
+Faster-RCNN (Ren et al., 2015)
+> python train.py --detection --train_mode faster_rcnn
 
 #### MTCNN
+MTCNN (Zhang et al., 2016)
+> python train.py --detection --train_mode mtcnn
 
-### Testing
-
+### Run our algorithm on your image
+For the moment, your image has to be in the same folder as run.py:
+> python run.py --image_path <path-to-your-image>
 
 ## Contact
 Leo.Nguyen@gmx.de
 
 ## License
 MIT License
+
+## References
+
+Ren, S., He, K., Girshick, R., & Sun, J. (2015). Faster R-CNN: Towards Real-Time Object Detection with Region Proposal NetworksarXiv e-prints, arXiv:1506.01497.  
+
+Sandler, M., Howard, A., Zhu, A., & Chen, L.C. (2018). MobileNetV2: Inverted Residuals and Linear BottlenecksarXiv e-prints, arXiv:1801.04381.  
+
+Szegedy, C., Liu, W., Jia, P., Reed, S., Anguelov, D., Vanhoucke, V., & Rabinovich, A. (2014). Going Deeper with ConvolutionsarXiv e-prints, arXiv:1409.4842.  
+
+Zhang, K., Zhang, Z., Li, Z., & Qiao, Y. (2016). Joint Face Detection and Alignment Using Multitask Cascaded Convolutional NetworksIEEE Signal Processing Letters, 23(10), 1499-1503.  
 
 
 
